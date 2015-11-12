@@ -20,7 +20,13 @@ Warden::Manager.after_set_user do |record, warden, options|
     proxy = Devise::Hooks::Proxy.new(warden)
 
     ### allow infinite time for self assessments
-    if record.timedout?(last_request_at) && !env['devise.skip_timeout'] && env['HTTP_REFERER'].match('self_assessment').nil?
+    referer = if env['HTTP_REFERER'].nil?
+      ''
+    else
+      env['HTTP_REFERER']
+    end
+
+    if record.timedout?(last_request_at) && !env['devise.skip_timeout'] && referer.match('self_assessment').nil?
       Devise.sign_out_all_scopes ? proxy.sign_out : proxy.sign_out(scope)
 
       throw :warden, scope: scope, message: :timeout
